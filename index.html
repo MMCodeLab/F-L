@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>F&amp;L — Andata e ritiro</title>
+  <meta name="description" content="Calendario delle corse di andata e ritiro di Luca e Francesco: si pianificano, si confermano e si tiene il conto dei pagamenti. Funziona offline.">
+
+  <!-- Colore della barra di sistema quando l'app e' installata -->
+  <meta name="theme-color" content="#0a0e22">
+  <meta name="color-scheme" content="dark">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/favicon.png" sizes="64x64" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="F&amp;L">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Sfondo sfumato fisso: sta dietro a tutto e non scorre con la pagina -->
+<div class="sfondo" aria-hidden="true">
+  <span class="bolla bolla-a"></span>
+  <span class="bolla bolla-b"></span>
+  <span class="bolla bolla-c"></span>
+</div>
+
+<!-- ======================= INTESTAZIONE ======================= -->
+<header class="intestazione vetro">
+  <span class="logo" aria-hidden="true">
+    <!-- Logo: taxi classico con insegna sul tetto -->
+    <svg viewBox="0 0 64 64" focusable="false">
+      <rect x="17" y="13.5" width="30" height="9.5" rx="3" fill="#ffc94a" stroke="#0d1330" stroke-width="1.6"/>
+      <text x="32" y="21" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+            font-size="7.4" font-weight="700" fill="#0d1330">F&amp;L</text>
+      <path d="M21 34 L25.5 24.6 Q26 23.6 27.2 23.6 L37.5 23.6 Q38.7 23.6 39.4 24.5 L45.5 34 Z" fill="#ffc94a"/>
+      <path d="M24.6 32.6 L27.7 26 L31.2 26 L31.2 32.6 Z" fill="#1b2a63"/>
+      <path d="M32.8 26 L36.9 26 L41.2 32.6 L32.8 32.6 Z" fill="#1b2a63"/>
+      <rect x="9" y="33" width="46" height="13" rx="4.5" fill="#ffc94a"/>
+      <g fill="#0d1330">
+        <rect x="9" y="36" width="4" height="3.2"/><rect x="17" y="36" width="4" height="3.2"/>
+        <rect x="25" y="36" width="4" height="3.2"/><rect x="33" y="36" width="4" height="3.2"/>
+        <rect x="41" y="36" width="4" height="3.2"/><rect x="49" y="36" width="4" height="3.2"/>
+        <rect x="13" y="39.2" width="4" height="3.2"/><rect x="21" y="39.2" width="4" height="3.2"/>
+        <rect x="29" y="39.2" width="4" height="3.2"/><rect x="37" y="39.2" width="4" height="3.2"/>
+        <rect x="45" y="39.2" width="4" height="3.2"/><rect x="53" y="39.2" width="2" height="3.2"/>
+      </g>
+      <circle cx="19" cy="47" r="6.4" fill="#0d1330"/><circle cx="19" cy="47" r="2.5" fill="#dfe5f7"/>
+      <circle cx="45" cy="47" r="6.4" fill="#0d1330"/><circle cx="45" cy="47" r="2.5" fill="#dfe5f7"/>
+    </svg>
+  </span>
+  <div class="titoli">
+    <h1>F&amp;L</h1>
+    <p id="sottotitolo">Luca &amp; Francesco</p>
+  </div>
+  <button id="btn-oggi" class="pillola tap" type="button">Oggi</button>
+</header>
+
+<main id="contenuto">
+
+  <!-- ======================= HOME / CALENDARIO ======================= -->
+  <section id="pagina-home" class="pagina attiva" role="tabpanel" aria-labelledby="tab-home">
+
+    <div class="vetro pannello">
+      <!-- Navigazione del mese -->
+      <div class="mese-nav">
+        <button id="mese-prec" class="tondo tap" type="button" aria-label="Mese precedente">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <h2 id="mese-etichetta" class="mese-etichetta" aria-live="polite">&nbsp;</h2>
+        <button id="mese-succ" class="tondo tap" type="button" aria-label="Mese successivo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Barra della selezione multipla -->
+      <div class="barra-strumenti">
+        <button id="btn-multi" class="chip tap" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Selezione multipla
+        </button>
+        <span id="riepilogo-mese-mini" class="mini-nota"></span>
+      </div>
+
+      <!-- Pannello che compare solo in selezione multipla -->
+      <div id="pannello-multi" class="pannello-multi" hidden>
+        <p class="etichetta-piccola">Tocca i giorni, oppure scegli i giorni della settimana</p>
+        <div id="chip-settimana" class="chip-riga"></div>
+        <p class="etichetta-piccola">Persone</p>
+        <div id="chip-persone-multi" class="chip-riga"></div>
+        <p class="etichetta-piccola">Corse</p>
+        <div id="chip-tipi-multi" class="chip-riga"></div>
+        <div class="azioni-multi">
+          <button id="multi-pianifica" class="bottone primario tap" type="button">Pianifica <span id="multi-conteggio">0</span></button>
+          <button id="multi-rimuovi" class="bottone fantasma tap" type="button">Rimuovi</button>
+          <button id="multi-annulla" class="bottone fantasma tap" type="button">Esci</button>
+        </div>
+      </div>
+
+      <!-- Calendario -->
+      <div id="intestazione-settimana" class="settimana" aria-hidden="true"></div>
+      <div id="griglia" class="griglia" role="grid" aria-label="Calendario del mese"></div>
+    </div>
+
+    <!-- Riquadro delle corse di oggi -->
+    <div id="card-oggi" class="vetro pannello card-oggi"></div>
+  </section>
+
+  <!-- ======================= RIEPILOGO ======================= -->
+  <section id="pagina-riepilogo" class="pagina" role="tabpanel" aria-labelledby="tab-riepilogo">
+    <div class="vetro pannello">
+      <div class="mese-nav">
+        <button id="mese-prec-2" class="tondo tap" type="button" aria-label="Mese precedente">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <h2 id="mese-etichetta-2" class="mese-etichetta">&nbsp;</h2>
+        <button id="mese-succ-2" class="tondo tap" type="button" aria-label="Mese successivo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div id="anello-costanza" class="anello-wrap"></div>
+      <div id="statistiche" class="griglia-stat"></div>
+    </div>
+
+    <div class="vetro pannello">
+      <h3 class="titolo-sezione">Per persona</h3>
+      <div id="stat-persone" class="lista-persone"></div>
+    </div>
+
+    <div class="vetro pannello">
+      <h3 class="titolo-sezione">Andata e ritiro</h3>
+      <div id="stat-tipi" class="lista-tipi"></div>
+    </div>
+
+    <div id="card-pagamenti" class="vetro pannello"></div>
+
+    <div class="vetro pannello">
+      <h3 class="titolo-sezione">Legenda dei colori</h3>
+      <ul class="legenda">
+        <li><i class="pallino attesa"></i><span><strong>Grigio</strong> — corsa in programma, il giorno non è ancora passato</span></li>
+        <li><i class="pallino fatto"></i><span><strong>Verde</strong> — corse confermate</span></li>
+        <li><i class="pallino mancato"></i><span><strong>Rosso</strong> — giorno passato senza conferma</span></li>
+        <li><i class="pallino mezzo-mancato"></i><span><strong>Mezzo verde</strong> — di quella persona è stata confermata solo una delle due corse</span></li>
+        <li><i class="pallino-doppio"><i class="pallino fatto"></i><i class="pallino attesa"></i></i><span><strong>Due pallini</strong> — uno per persona: si vede subito chi manca</span></li>
+        <li><i class="quadratino-oggi"></i><span><strong>Casella scura</strong> — il giorno di oggi</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ======================= IMPOSTAZIONI ======================= -->
+  <section id="pagina-impostazioni" class="pagina" role="tabpanel" aria-labelledby="tab-impostazioni">
+    <div class="vetro pannello">
+      <h3 class="titolo-sezione">Le persone</h3>
+      <label class="campo">
+        <span>Prima persona</span>
+        <input id="nome-p1" type="text" maxlength="18" autocomplete="off" spellcheck="false" placeholder="Luca">
+      </label>
+      <label class="campo">
+        <span>Seconda persona</span>
+        <input id="nome-p2" type="text" maxlength="18" autocomplete="off" spellcheck="false" placeholder="Francesco">
+      </label>
+      <p class="nota">I nomi si aggiornano ovunque nell'app e lo storico resta intatto.</p>
+    </div>
+
+    <div class="vetro pannello">
+      <div class="testa-sezione">
+        <h3 class="titolo-sezione">Promemoria e notifiche</h3>
+        <span id="pastiglia-notifiche" class="pastiglia"></span>
+      </div>
+      <label class="campo">
+        <span>Avvisami ogni</span>
+        <span class="campo-inline">
+          <input id="soglia-pagamento" type="number" min="1" max="50" step="1" inputmode="numeric">
+          <span class="suffisso">corse completate</span>
+        </span>
+      </label>
+      <button id="btn-notifiche" class="bottone primario largo tap" type="button">Attiva le notifiche</button>
+      <p id="stato-notifiche" class="nota"></p>
+    </div>
+
+    <div class="vetro pannello">
+      <h3 class="titolo-sezione">Calendario</h3>
+      <label class="campo">
+        <span>La settimana inizia di</span>
+        <select id="inizio-settimana">
+          <option value="1">Lunedì</option>
+          <option value="0">Domenica</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="vetro pannello">
+      <h3 class="titolo-sezione">I dati</h3>
+      <p class="nota">Tutto è salvato solo su questo dispositivo: nessun account, nessun server.</p>
+      <div class="colonna-bottoni">
+        <button id="btn-esporta" class="bottone tap" type="button">Esporta in JSON</button>
+        <button id="btn-importa" class="bottone tap" type="button">Importa da JSON</button>
+        <input id="file-importa" type="file" accept="application/json,.json" hidden>
+        <button id="btn-installa" class="bottone tap" type="button" hidden>Installa l'app</button>
+        <button id="btn-azzera" class="bottone pericolo tap" type="button">Azzera tutti i dati</button>
+      </div>
+    </div>
+
+    <p class="firma">F&amp;L · versione <span id="versione-app">1.1.0</span></p>
+  </section>
+</main>
+
+<!-- ======================= NAVBAR IN BASSO ======================= -->
+<nav class="navbar vetro" role="tablist" aria-label="Sezioni">
+  <button id="tab-home" class="voce-nav attiva tap" role="tab" aria-selected="true" data-pagina="home" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.7" fill="currentColor"/></svg>
+    <span>Home</span>
+  </button>
+  <button id="tab-riepilogo" class="voce-nav tap" role="tab" aria-selected="false" data-pagina="riepilogo" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>
+    <span>Riepilogo</span>
+  </button>
+  <button id="tab-impostazioni" class="voce-nav tap" role="tab" aria-selected="false" data-pagina="impostazioni" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+    <span>Impostazioni</span>
+  </button>
+</nav>
+
+<!-- ======================= SCHEDA DEL GIORNO ======================= -->
+<div id="velo" class="velo" hidden></div>
+<section id="scheda" class="scheda vetro" role="dialog" aria-modal="true" aria-labelledby="scheda-titolo" hidden></section>
+
+<!-- ======================= MODALE DEL PAGAMENTO ======================= -->
+<div id="modale-pagamento" class="modale-wrap" hidden>
+  <div class="modale vetro" role="alertdialog" aria-labelledby="modale-titolo" aria-describedby="modale-testo">
+    <div class="modale-icona" aria-hidden="true">💰</div>
+    <h2 id="modale-titolo">Pagamento da effettuare</h2>
+    <p id="modale-testo"></p>
+    <div class="colonna-bottoni">
+      <button id="modale-pagato" class="bottone primario largo tap" type="button">Segna come pagato</button>
+      <button id="modale-dopo" class="bottone fantasma largo tap" type="button">Più tardi</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="js/storage.js"></script>
+<script src="js/calendario.js"></script>
+<script src="js/notifiche.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
