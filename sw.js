@@ -9,7 +9,7 @@
    tutto di nuovo.
    ========================================================================== */
 
-var VERSIONE = 'fl-v3';
+var VERSIONE = 'fl-v4';
 var CACHE = 'fl-cache-' + VERSIONE;
 
 var FILE = [

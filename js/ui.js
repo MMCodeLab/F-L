@@ -68,7 +68,7 @@
   /* =====================================================================
      NAVIGAZIONE
      ===================================================================== */
-  function vaiA(pagina) {
+  function vaiA(pagina, senzaMoto) {
     stato.pagina = pagina;
     $$('.pagina').forEach(function (sez) {
       sez.classList.toggle('attiva', sez.id === 'pagina-' + pagina);
@@ -78,7 +78,28 @@
       voce.classList.toggle('attiva', attiva);
       voce.setAttribute('aria-selected', attiva ? 'true' : 'false');
     });
+    posizionaIndicatore(senzaMoto);
     global.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* Porta l'indicatore della navbar sotto la voce attiva.
+     Si lavora in pixel e non in percentuale: così la pastiglia resta
+     allineata anche se le voci hanno larghezze diverse o se cambia la
+     larghezza dello schermo. Con "senzaMoto" si salta l'animazione, che
+     all'avvio la farebbe partire da sinistra. */
+  function posizionaIndicatore(senzaMoto) {
+    var attiva = $('.voce-nav.attiva');
+    var indicatore = $('#indicatore-nav');
+    if (!attiva || !indicatore) return;
+
+    if (senzaMoto) indicatore.style.transition = 'none';
+    indicatore.style.width = attiva.offsetWidth + 'px';
+    indicatore.style.height = attiva.offsetHeight + 'px';
+    indicatore.style.transform = 'translateX(' + attiva.offsetLeft + 'px)';
+    if (senzaMoto) {
+      void indicatore.offsetWidth;      // forza il ricalcolo prima di riaccendere l'animazione
+      indicatore.style.transition = '';
+    }
   }
 
   function cambiaMese(delta) {
@@ -824,7 +845,17 @@
   function init() {
     collegaEventi();
     renderTutto();
-    vaiA('home');
+    vaiA('home', true);
+
+    // Se cambia la larghezza (rotazione, tastiera, finestra ridimensionata)
+    // le voci si allargano e l'indicatore va rimesso al suo posto.
+    global.addEventListener('resize', function () { posizionaIndicatore(true); });
+    global.addEventListener('orientationchange', function () {
+      global.setTimeout(function () { posizionaIndicatore(true); }, 200);
+    });
+    // Ultima passata a layout assestato: su iOS le misure appena dopo
+    // DOMContentLoaded possono essere ancora quelle vecchie.
+    global.addEventListener('load', function () { posizionaIndicatore(true); });
   }
 
   FL.ui = {

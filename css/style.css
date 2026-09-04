@@ -44,9 +44,13 @@
   --raggio-xl: 28px;
   --raggio:    20px;
   --raggio-s:  14px;
-  --alt-nav:   66px;
+  --alt-nav:   70px;   /* altezza della barra flottante in basso */
   --sicura-basso: env(safe-area-inset-bottom, 0px);
   --sicura-alto:  env(safe-area-inset-top, 0px);
+  /* Quanto la barra sta staccata dal bordo inferiore: almeno 16px, di piu'
+     sugli iPhone con la barra di sistema. */
+  --stacco-nav: max(16px, env(safe-area-inset-bottom, 16px));
+  --molla: cubic-bezier(.22, 1, .36, 1);
 }
 
 * { box-sizing: border-box; }
@@ -153,7 +157,7 @@ button { cursor: pointer; border: 0; background: none; }
 main {
   /* Lo spazio in alto lascia respirare l'intestazione fissa,
      quello in basso tiene conto della navbar e della safe-area iPhone. */
-  padding: calc(var(--sicura-alto) + 74px) 14px calc(var(--alt-nav) + var(--sicura-basso) + 28px);
+  padding: calc(var(--sicura-alto) + 74px) 14px calc(var(--alt-nav) + var(--stacco-nav) + 24px);
   max-width: 620px;
   margin: 0 auto;
 }
@@ -166,42 +170,61 @@ main {
   animation: entra .28s ease both;
 }
 
-/* Navbar in basso, anche lei in vetro */
+/* Navbar in basso: una pillola di vetro che galleggia sopra il contenuto,
+   con l'indicatore colorato che scivola sotto la voce attiva. */
 .navbar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 50%;
+  bottom: var(--stacco-nav);
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 528px;
   z-index: 45;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding: 8px 10px calc(8px + var(--sicura-basso));
-  border-radius: var(--raggio-xl) var(--raggio-xl) 0 0;
-  border-width: 1px 0 0 0;
+  display: flex;
+  padding: 6px;
+  border-radius: 999px;
+  /* Toccando ripetutamente una voce il testo non deve evidenziarsi */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.indicatore-nav {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 33.333%;
+  height: calc(100% - 12px);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accento), #5b3ef0);
+  box-shadow: 0 4px 18px rgba(124, 92, 255, .45);
+  transition: transform .45s var(--molla), width .45s var(--molla);
+  will-change: transform;
+  z-index: 0;
 }
 
 .voce-nav {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-height: 50px;
-  padding: 6px 4px;
-  border-radius: var(--raggio-s);
+  gap: 2px;
+  padding: 10px 2px;
+  border-radius: 999px;
   color: var(--testo-tenue);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: .01em;
-  transition: color .2s ease, background .2s ease, transform .12s ease;
+  letter-spacing: -.01em;
+  transition: color .3s ease, transform .2s var(--molla);
 }
-.voce-nav svg { width: 23px; height: 23px; }
-.voce-nav.attiva {
-  color: var(--testo);
-  background: linear-gradient(160deg, rgba(124, 92, 255, .32), rgba(124, 92, 255, .10));
-  box-shadow: var(--luce-interna);
-}
+.voce-nav:active { transform: scale(.92); }
+.voce-nav.attiva { color: #fff; }
+
+.voce-icona { display: block; width: 22px; height: 22px; }
+.voce-icona svg { width: 100%; height: 100%; display: block; }
+.voce-testo { white-space: nowrap; }
 
 /* ======================== 4. VETRO E CONTROLLI ========================= */
 .vetro {
@@ -900,7 +923,7 @@ main {
   position: fixed;
   z-index: 70;
   left: 50%;
-  bottom: calc(var(--alt-nav) + var(--sicura-basso) + 18px);
+  bottom: calc(var(--alt-nav) + var(--stacco-nav) + 14px);
   transform: translateX(-50%);
   max-width: min(92vw, 420px);
   padding: 12px 18px;
@@ -935,7 +958,7 @@ main {
 /* Schermi piccoli: qualche misura piu' compatta */
 @media (max-width: 350px) {
   .giorno .numero { font-size: 13.5px; }
-  .voce-nav span { font-size: 10px; }
+  .voce-testo { font-size: 9.5px; }
   .azioni-multi { grid-template-columns: 1fr 1fr; }
   .azioni-multi .bottone:first-child { grid-column: 1 / -1; }
 }
