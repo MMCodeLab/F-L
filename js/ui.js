@@ -298,7 +298,7 @@
                '<span class="avatar" style="--c:' + c.persona.colore + '">' +
                esc(iniziale(c.persona.nome)) + '</span>' +
                '<span class="nome">' + esc(c.persona.nome) +
-               '<span class="tipo-etichetta">' + iconaTipo(c.tipo.id) + c.tipo.nome + '</span></span>' +
+               '<span class="tipo-etichetta">' + iconaTipo(c.tipo.id) + c.tipo.nome + ' · ' + esc(c.dove) + '</span></span>' +
                '<button type="button" class="btn-conferma tap' + (c.fatto ? ' fatto' : '') +
                '" data-conferma="' + c.persona.id + '" data-tipo="' + c.tipo.id +
                '" data-chiave="' + chiave + '">' +
@@ -331,8 +331,31 @@
   function riassuntoPersona(p) {
     var previste = FL.dati.tipi().filter(function (t) { return p.corse[t.id].pianificato; });
     if (!previste.length) return 'Nessuna corsa in questo giorno';
-    if (previste.length === FL.dati.tipi().length) return 'Andata e ritiro';
+    if (previste.length === FL.dati.tipi().length) return 'Accompagnare e Andare a riprendere';
     return 'Solo ' + previste[0].nome.toLowerCase();
+  }
+
+  /* Riga "Dove" di un tipo di corsa: scuola, scuola di musica, i luoghi gia'
+     usati e "Altro...". Vale per tutte le persone che quel giorno hanno quella
+     corsa in programma. Se i luoghi sono diversi fra loro nessuno e' acceso. */
+  function rigaDove(s, t) {
+    var previste = s.persone.filter(function (p) { return p.corse[t.id].pianificato; });
+    if (!previste.length) return '';
+
+    var scelti = previste.map(function (p) { return p.corse[t.id].dove; });
+    var comune = scelti.every(function (d) { return d === scelti[0]; }) ? scelti[0] : null;
+
+    var luoghi = FL.dati.luoghiUsati();
+    scelti.forEach(function (d) { if (luoghi.indexOf(d) < 0) luoghi.push(d); });
+
+    return '<p class="mini-nota">' + esc(t.nome) + '</p>' +
+      '<div class="chip-riga">' +
+      luoghi.map(function (l) {
+        return '<button type="button" class="chip tap' + (l === comune ? ' attivo' : '') + '" ' +
+               'data-azione="dove" data-tipo="' + t.id + '" data-dove="' + esc(l) + '">' + esc(l) + '</button>';
+      }).join('') +
+      '<button type="button" class="chip tap" data-azione="dove-altro" data-tipo="' + t.id + '">Altro…</button>' +
+      '</div>';
   }
 
   function renderScheda() {
@@ -357,11 +380,14 @@
 
     // Scorciatoie che valgono per tutte le persone insieme
     html += '<p class="etichetta-piccola">Scorciatoie</p><div class="chip-riga">' +
-      '<button type="button" class="chip tap" data-azione="tutto">Andata e ritiro</button>' +
-      '<button type="button" class="chip tap" data-azione="solo" data-tipo="andata">Solo andata</button>' +
-      '<button type="button" class="chip tap" data-azione="solo" data-tipo="ritiro">Solo ritiro</button>' +
+            '<button type="button" class="chip tap" data-azione="tutto">Tutto</button>' +
+      '<button type="button" class="chip tap" data-azione="solo" data-tipo="andata">Solo accompagnare</button>' +
+      '<button type="button" class="chip tap" data-azione="solo" data-tipo="ritiro">Solo riprendere</button>' +
       '<button type="button" class="chip tap" data-azione="niente">Niente</button>' +
       '</div><div class="spazio"></div>';
+          // Dove si va, una riga per tipo di corsa
+    var righeDove = FL.dati.tipi().map(function (t) { return rigaDove(s, t); }).join('');
+    if (righeDove) html += '<p class="etichetta-piccola">Dove</p>' + righeDove + '<div class="spazio"></div>';
 
     // Un blocco per persona, con dentro una riga per l'andata e una per il ritiro
     html += s.persone.map(function (p) {
@@ -388,6 +414,8 @@
         var testo = !c.pianificato ? 'Non prevista'
           : c.fatto ? 'Completata'
           : (s.passato ? 'Mai confermata' : 'Da fare');
+                  if (c.pianificato) testo += ' · ' + esc(c.dove);
+
 
         return '<div class="' + classeRiga + '">' +
           '<span class="corsa-icona">' + iconaTipo(t.id) + '</span>' +
@@ -420,7 +448,7 @@
   }
 
   /* Gestisce i tap dentro la scheda. */
-  function azioneScheda(azione, idPersona, idTipo) {
+  function azioneScheda(azione, idPersona, idTipo, dove) {
     var chiave = stato.chiaveAperta;
     if (!chiave) return;
 
@@ -447,6 +475,13 @@
           FL.dati.pianifica(chiave, p.id, t.id, t.id === idTipo);
         });
       });
+          } else if (azione === 'dove') {
+      FL.dati.impostaDoveGiorno(chiave, idTipo, dove);
+
+    } else if (azione === 'dove-altro') {
+      var risposta = global.prompt('Dove? (per esempio Scuola di musica, Palestra)', '');
+      if (risposta === null) return;          // annullato
+      FL.dati.impostaDoveGiorno(chiave, idTipo, risposta);
 
     } else if (azione === 'niente' || azione === 'svuota') {
       FL.dati.svuotaGiorno(chiave);
@@ -714,7 +749,7 @@
       var c = FL.dati.corsa(chiave, idPersona, idTipo);
       FL.dati.conferma(chiave, idPersona, idTipo, !c.fatto);
       if (!c.fatto) {
-        toast(FL.dati.persona(idPersona).nome + ' · ' + FL.dati.tipo(idTipo).nome + ' completata');
+                toast('Fatto: ' + FL.dati.persona(idPersona).nome + ' · ' + FL.dati.tipo(idTipo).nome.toLowerCase());
         FL.notifiche.controllaPagamento();
       }
       renderTutto();
@@ -723,7 +758,7 @@
     // Scheda del giorno
     $('#scheda').addEventListener('click', function (ev) {
       var b = ev.target.closest('[data-azione]');
-      if (b) azioneScheda(b.dataset.azione, b.dataset.persona, b.dataset.tipo);
+            if (b) azioneScheda(b.dataset.azione, b.dataset.persona, b.dataset.tipo, b.dataset.dove);
     });
     $('#velo').addEventListener('click', chiudiScheda);
     doc.addEventListener('keydown', function (ev) {
@@ -790,6 +825,7 @@
 
     // Impostazioni: export / import / azzera
     $('#btn-esporta').addEventListener('click', esportaFile);
+        $('#btn-esporta-pdf').addEventListener('click', esportaPdf);
     $('#btn-importa').addEventListener('click', function () { $('#file-importa').click(); });
     $('#file-importa').addEventListener('change', importaFile);
     $('#btn-azzera').addEventListener('click', function () {
@@ -819,6 +855,45 @@
     doc.body.removeChild(a);
     global.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     toast('Backup esportato');
+  }
+
+    /* PDF delle corse confermate: questa settimana, la scorsa o il mese
+     che si sta guardando nel calendario. */
+  function esportaPdf() {
+    var scelta = $('#pdf-periodo').value;
+    var inizioSett = FL.dati.impostazioni().inizioSettimana;
+    var adesso = new Date();
+    var da, a;
+
+    if (scelta === 'mese') {
+      da = FL.cal.chiave(new Date(stato.anno, stato.mese, 1));
+      a = FL.cal.chiave(new Date(stato.anno, stato.mese + 1, 0));
+    } else {
+      var riferimento = scelta === 'scorsa'
+        ? FL.cal.chiave(new Date(adesso.getFullYear(), adesso.getMonth(), adesso.getDate() - 7))
+        : FL.cal.chiaveOggi();
+      var sett = FL.cal.intervalloSettimana(riferimento, inizioSett);
+      da = sett.da;
+      a = sett.a;
+    }
+
+    var righe = FL.cal.corsePerPeriodo(da, a);
+    var fatte = righe.filter(function (r) { return r.fatto; }).length;
+    if (!fatte) {
+      toast('Nessuna corsa confermata in questo periodo');
+      return;
+    }
+
+    var blob = FL.pdf.creaCorse({ da: da, a: a, righe: righe });
+    var url = URL.createObjectURL(blob);
+    var link = doc.createElement('a');
+    link.href = url;
+    link.download = 'corse-' + da + '_' + a + '.pdf';
+    doc.body.appendChild(link);
+    link.click();
+    doc.body.removeChild(link);
+    global.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    toast('PDF creato: ' + plur(fatte, 'corsa', 'corse'));
   }
 
   function importaFile(ev) {

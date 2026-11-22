@@ -38,10 +38,14 @@
   ];
 
   // I due tipi di corsa. L'ordine conta: e' quello in cui compaiono a schermo.
-  var TIPI = [
-    { id: 'andata', nome: 'Andata', descrizione: 'la persona viene accompagnata' },
-    { id: 'ritiro', nome: 'Ritiro', descrizione: 'la persona viene ripresa' }
+    var TIPI = [
+    { id: 'andata', nome: 'Accompagnare', descrizione: 'la persona viene accompagnata' },
+    { id: 'ritiro', nome: 'Andare a riprendere', descrizione: 'la persona viene ripresa' }
   ];
+
+  // Dove si va: di serie la scuola. Il testo e' libero (es. "Scuola di musica").
+  var DOVE_PREDEFINITO = 'Scuola';
+  var DOVE_MAX = 30;
 
   // Copia dello stato tenuta in memoria: si legge da qui, si scrive su disco.
   var stato = null;
@@ -65,10 +69,15 @@
     return isNaN(n) ? predefinito : n;
   }
 
-  function corsaVuota() {
-    return { pianificato: false, fatto: false, fattoIl: null };
+    /* Ripulisce il luogo: se e' vuoto torna alla scuola. */
+  function pulisciDove(valore) {
+    var t = String(valore == null ? '' : valore).replace(/\s+/g, ' ').trim().slice(0, DOVE_MAX);
+    return t || DOVE_PREDEFINITO;
   }
 
+  function corsaVuota() {
+    return { pianificato: false, fatto: false, fattoIl: null, dove: DOVE_PREDEFINITO };
+  }
   /* Legge una corsa da dati grezzi, accettando anche il formato della
      versione 1, dove la persona aveva una sola corsa senza nome:
      { pianificato:true, fatto:false }  ->  diventa l'andata. */
@@ -78,7 +87,8 @@
     var fatto = !!grezzo.fatto;
     if (fatto) pianificato = true;          // confermata implica pianificata
     if (!pianificato) return corsaVuota();
-    return { pianificato: true, fatto: fatto, fattoIl: grezzo.fattoIl || null };
+        return { pianificato: true, fatto: fatto, fattoIl: grezzo.fattoIl || null,
+             dove: pulisciDove(grezzo.dove) };
   }
 
   /* Rimette in riga dati arrivati da un import o da una versione vecchia. */
@@ -224,10 +234,11 @@
     var giorno = dati().giorni[chiave];
     var corse = giorno && giorno[idPersona];
     var c = corse && corse[idTipo];
-    return {
+        return {
       pianificato: !!(c && c.pianificato),
       fatto: !!(c && c.fatto),
-      fattoIl: (c && c.fattoIl) || null
+      fattoIl: (c && c.fattoIl) || null,
+      dove: pulisciDove(c && c.dove)
     };
   }
 
@@ -247,7 +258,8 @@
       corse[idTipo] = {
         pianificato: true,
         fatto: !!fatto,
-        fattoIl: fatto ? (corse[idTipo] && corse[idTipo].fattoIl) || FL.cal.chiaveOggi() : null
+                fattoIl: fatto ? (corse[idTipo] && corse[idTipo].fattoIl) || FL.cal.chiaveOggi() : null,
+        dove: pulisciDove(corse[idTipo] && corse[idTipo].dove)
       };
     }
     if (!Object.keys(corse).length) delete giorno[idPersona];
@@ -278,6 +290,41 @@
         });
       });
     });
+  }
+
+    /* Cambia il luogo di un tipo di corsa, per tutte le persone che quel
+     giorno hanno quella corsa in programma. */
+  function impostaDoveGiorno(chiave, idTipo, dove) {
+    var giorno = dati().giorni[chiave];
+    if (!giorno) return;
+    var pulito = pulisciDove(dove);
+    Object.keys(giorno).forEach(function (idPersona) {
+      if (giorno[idPersona][idTipo]) giorno[idPersona][idTipo].dove = pulito;
+    });
+    salva();
+  }
+
+  /* Luoghi da proporre: la scuola, la scuola di musica e quelli gia' usati. */
+  function luoghiUsati() {
+    var visti = {};
+    var lista = [];
+    function aggiungi(nome) {
+      var k = nome.toLowerCase();
+      if (visti[k]) return;
+      visti[k] = true;
+      lista.push(nome);
+    }
+    aggiungi(DOVE_PREDEFINITO);
+    aggiungi('Scuola di musica');
+    var giorni = dati().giorni;
+    Object.keys(giorni).sort().forEach(function (k) {
+      Object.keys(giorni[k]).forEach(function (idPersona) {
+        Object.keys(giorni[k][idPersona]).forEach(function (idTipo) {
+          aggiungi(pulisciDove(giorni[k][idPersona][idTipo].dove));
+        });
+      });
+    });
+    return lista.slice(0, 8);
   }
 
   function svuotaGiorno(chiave) {
@@ -355,6 +402,49 @@
   function azzera() {
     stato = datiVuoti();
     salva();
+  }
+
+    /* ------------------------ Settimana e periodi ------------------------ */
+
+  /* Primo e ultimo giorno della settimana che contiene la data k.
+     inizioSettimana: 1 = lunedi', 0 = domenica. */
+  function intervalloSettimana(k, inizioSettimana) {
+    var d = daChiave(k);
+    var scarto = (d.getDay() - inizioSettimana + 7) % 7;
+    var inizio = new Date(d.getFullYear(), d.getMonth(), d.getDate() - scarto);
+    var fine = new Date(inizio.getFullYear(), inizio.getMonth(), inizio.getDate() + 6);
+    return { da: chiave(inizio), a: chiave(fine) };
+  }
+
+  /* Tutte le corse previste fra due date (estremi inclusi), in ordine:
+     per giorno, poi accompagnare prima di riprendere, poi per persona. */
+  function corsePerPeriodo(da, a) {
+    var giorni = FL.dati.stato().giorni;
+    var persone = FL.dati.persone();
+    var tipi = FL.dati.tipi();
+    var out = [];
+
+    Object.keys(giorni).sort().forEach(function (k) {
+      if (k < da || k > a) return;
+      statoGiorno(k).corse.forEach(function (c) {
+        out.push({
+          chiave: k, persona: c.persona, tipo: c.tipo,
+          dove: c.dove, fatto: c.fatto, stato: c.stato
+        });
+      });
+    });
+
+    function indice(lista, id) {
+      for (var i = 0; i < lista.length; i++) if (lista[i].id === id) return i;
+      return 0;
+    }
+    out.sort(function (x, y) {
+      if (x.chiave !== y.chiave) return x.chiave < y.chiave ? -1 : 1;
+      var t = indice(tipi, x.tipo.id) - indice(tipi, y.tipo.id);
+      if (t) return t;
+      return indice(persone, x.persona.id) - indice(persone, y.persona.id);
+    });
+    return out;
   }
 
   /* ------------------------------- API --------------------------------- */

@@ -291,6 +291,8 @@
     giorniDelMesePerSettimana: giorniDelMesePerSettimana,
     statoCorsa: statoCorsa,
     statoGiorno: statoGiorno,
-    statistiche: statistiche
+    statistiche: statistiche,
+    intervalloSettimana: intervalloSettimana,
+    corsePerPeriodo: corsePerPeriodo
   };
 })(window);

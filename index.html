@@ -133,7 +133,7 @@
     </div>
 
     <div class="vetro pannello">
-      <h3 class="titolo-sezione">Andata e ritiro</h3>
+      <h3 class="titolo-sezione">Accompagnare e Andare a riprendere</h3>
       <div id="stat-tipi" class="lista-tipi"></div>
     </div>
 
@@ -197,6 +197,17 @@
     <div class="vetro pannello">
       <h3 class="titolo-sezione">I dati</h3>
       <p class="nota">Tutto è salvato solo su questo dispositivo: nessun account, nessun server.</p>
+            <label class="campo">
+        <span>PDF delle corse</span>
+        <select id="pdf-periodo">
+          <option value="questa">Questa settimana</option>
+          <option value="scorsa">Settimana scorsa</option>
+          <option value="mese">Mese del calendario</option>
+        </select>
+      </label>
+      <div class="colonna-bottoni">
+        <button id="btn-esporta-pdf" class="bottone primario tap" type="button">Esporta il PDF</button>
+        <button id="btn-esporta" ...
       <div class="colonna-bottoni">
         <button id="btn-esporta" class="bottone tap" type="button">Esporta in JSON</button>
         <button id="btn-importa" class="bottone tap" type="button">Importa da JSON</button>
@@ -251,6 +262,7 @@
 <script src="js/storage.js"></script>
 <script src="js/calendario.js"></script>
 <script src="js/notifiche.js"></script>
+<script src="js/pdf.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>
 </body>

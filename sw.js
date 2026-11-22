@@ -9,7 +9,7 @@
    tutto di nuovo.
    ========================================================================== */
 
-var VERSIONE = 'fl-v4';
+var VERSIONE = 'fl-v5';
 var CACHE = 'fl-cache-' + VERSIONE;
 
 var FILE = [
@@ -26,7 +26,8 @@ var FILE = [
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
-  './icons/favicon.png'
+  './icons/favicon.png',
+  './js/pdf.js'
 ];
 
 /* Installazione: si mette da parte tutto il necessario.
