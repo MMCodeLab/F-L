@@ -596,10 +596,10 @@ main {
     transform: translateX(-50%);
     border-radius: var(--raggio-xl);
     border-width: 1px;
+    animation-name: sale-centrata;
   }
-  @keyframes sale { from { transform: translate(-50%, 40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+  @keyframes sale-centrata { from { transform: translate(-50%, 40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
 }
-
 .maniglia {
   width: 42px;
   height: 4px;
@@ -753,6 +753,10 @@ main {
 
 .scheda-piede { display: flex; gap: 10px; margin-top: 14px; }
 .scheda-piede .bottone { flex: 1 1 0; }
+
+/* Righe "Dove": nome del tipo di corsa sopra i chip dei luoghi */
+.scheda > .mini-nota { margin: 10px 0 6px; font-weight: 600; color: var(--testo-soft); }
+.scheda > .etichetta-piccola + .mini-nota { margin-top: 0; }
 
 /* ============================ 8. RIEPILOGO ============================= */
 .anello-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
