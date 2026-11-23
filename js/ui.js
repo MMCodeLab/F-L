@@ -380,12 +380,13 @@
 
     // Scorciatoie che valgono per tutte le persone insieme
     html += '<p class="etichetta-piccola">Scorciatoie</p><div class="chip-riga">' +
-            '<button type="button" class="chip tap" data-azione="tutto">Tutto</button>' +
+      '<button type="button" class="chip tap" data-azione="tutto">Tutto</button>' +
       '<button type="button" class="chip tap" data-azione="solo" data-tipo="andata">Solo accompagnare</button>' +
       '<button type="button" class="chip tap" data-azione="solo" data-tipo="ritiro">Solo riprendere</button>' +
       '<button type="button" class="chip tap" data-azione="niente">Niente</button>' +
       '</div><div class="spazio"></div>';
-          // Dove si va, una riga per tipo di corsa
+
+    // Dove si va, una riga per tipo di corsa
     var righeDove = FL.dati.tipi().map(function (t) { return rigaDove(s, t); }).join('');
     if (righeDove) html += '<p class="etichetta-piccola">Dove</p>' + righeDove + '<div class="spazio"></div>';
 
@@ -414,8 +415,7 @@
         var testo = !c.pianificato ? 'Non prevista'
           : c.fatto ? 'Completata'
           : (s.passato ? 'Mai confermata' : 'Da fare');
-                  if (c.pianificato) testo += ' · ' + esc(c.dove);
-
+        if (c.pianificato) testo += ' · ' + esc(c.dove);
 
         return '<div class="' + classeRiga + '">' +
           '<span class="corsa-icona">' + iconaTipo(t.id) + '</span>' +
@@ -475,7 +475,8 @@
           FL.dati.pianifica(chiave, p.id, t.id, t.id === idTipo);
         });
       });
-          } else if (azione === 'dove') {
+
+    } else if (azione === 'dove') {
       FL.dati.impostaDoveGiorno(chiave, idTipo, dove);
 
     } else if (azione === 'dove-altro') {
@@ -749,7 +750,7 @@
       var c = FL.dati.corsa(chiave, idPersona, idTipo);
       FL.dati.conferma(chiave, idPersona, idTipo, !c.fatto);
       if (!c.fatto) {
-                toast('Fatto: ' + FL.dati.persona(idPersona).nome + ' · ' + FL.dati.tipo(idTipo).nome.toLowerCase());
+        toast('Fatto: ' + FL.dati.persona(idPersona).nome + ' · ' + FL.dati.tipo(idTipo).nome.toLowerCase());
         FL.notifiche.controllaPagamento();
       }
       renderTutto();
@@ -758,7 +759,7 @@
     // Scheda del giorno
     $('#scheda').addEventListener('click', function (ev) {
       var b = ev.target.closest('[data-azione]');
-            if (b) azioneScheda(b.dataset.azione, b.dataset.persona, b.dataset.tipo, b.dataset.dove);
+      if (b) azioneScheda(b.dataset.azione, b.dataset.persona, b.dataset.tipo, b.dataset.dove);
     });
     $('#velo').addEventListener('click', chiudiScheda);
     doc.addEventListener('keydown', function (ev) {
@@ -825,7 +826,8 @@
 
     // Impostazioni: export / import / azzera
     $('#btn-esporta').addEventListener('click', esportaFile);
-        $('#btn-esporta-pdf').addEventListener('click', esportaPdf);
+    var btnPdf = $('#btn-esporta-pdf');
+    if (btnPdf) btnPdf.addEventListener('click', esportaPdf);
     $('#btn-importa').addEventListener('click', function () { $('#file-importa').click(); });
     $('#file-importa').addEventListener('change', importaFile);
     $('#btn-azzera').addEventListener('click', function () {
@@ -857,10 +859,11 @@
     toast('Backup esportato');
   }
 
-    /* PDF delle corse confermate: questa settimana, la scorsa o il mese
+  /* PDF delle corse confermate: questa settimana, la scorsa o il mese
      che si sta guardando nel calendario. */
   function esportaPdf() {
-    var scelta = $('#pdf-periodo').value;
+    var selettore = $('#pdf-periodo');
+    var scelta = selettore ? selettore.value : 'questa';
     var inizioSett = FL.dati.impostazioni().inizioSettimana;
     var adesso = new Date();
     var da, a;
