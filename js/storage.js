@@ -38,7 +38,7 @@
   ];
 
   // I due tipi di corsa. L'ordine conta: e' quello in cui compaiono a schermo.
-    var TIPI = [
+  var TIPI = [
     { id: 'andata', nome: 'Accompagnare', descrizione: 'la persona viene accompagnata' },
     { id: 'ritiro', nome: 'Andare a riprendere', descrizione: 'la persona viene ripresa' }
   ];
@@ -69,7 +69,7 @@
     return isNaN(n) ? predefinito : n;
   }
 
-    /* Ripulisce il luogo: se e' vuoto torna alla scuola. */
+  /* Ripulisce il luogo: se e' vuoto torna alla scuola. */
   function pulisciDove(valore) {
     var t = String(valore == null ? '' : valore).replace(/\s+/g, ' ').trim().slice(0, DOVE_MAX);
     return t || DOVE_PREDEFINITO;
@@ -78,6 +78,7 @@
   function corsaVuota() {
     return { pianificato: false, fatto: false, fattoIl: null, dove: DOVE_PREDEFINITO };
   }
+
   /* Legge una corsa da dati grezzi, accettando anche il formato della
      versione 1, dove la persona aveva una sola corsa senza nome:
      { pianificato:true, fatto:false }  ->  diventa l'andata. */
@@ -87,7 +88,7 @@
     var fatto = !!grezzo.fatto;
     if (fatto) pianificato = true;          // confermata implica pianificata
     if (!pianificato) return corsaVuota();
-        return { pianificato: true, fatto: fatto, fattoIl: grezzo.fattoIl || null,
+    return { pianificato: true, fatto: fatto, fattoIl: grezzo.fattoIl || null,
              dove: pulisciDove(grezzo.dove) };
   }
 
@@ -234,7 +235,7 @@
     var giorno = dati().giorni[chiave];
     var corse = giorno && giorno[idPersona];
     var c = corse && corse[idTipo];
-        return {
+    return {
       pianificato: !!(c && c.pianificato),
       fatto: !!(c && c.fatto),
       fattoIl: (c && c.fattoIl) || null,
@@ -258,7 +259,7 @@
       corse[idTipo] = {
         pianificato: true,
         fatto: !!fatto,
-                fattoIl: fatto ? (corse[idTipo] && corse[idTipo].fattoIl) || FL.cal.chiaveOggi() : null,
+        fattoIl: fatto ? (corse[idTipo] && corse[idTipo].fattoIl) || FL.cal.chiaveOggi() : null,
         dove: pulisciDove(corse[idTipo] && corse[idTipo].dove)
       };
     }
@@ -292,7 +293,7 @@
     });
   }
 
-    /* Cambia il luogo di un tipo di corsa, per tutte le persone che quel
+  /* Cambia il luogo di un tipo di corsa, per tutte le persone che quel
      giorno hanno quella corsa in programma. */
   function impostaDoveGiorno(chiave, idTipo, dove) {
     var giorno = dati().giorni[chiave];
@@ -404,49 +405,6 @@
     salva();
   }
 
-    /* ------------------------ Settimana e periodi ------------------------ */
-
-  /* Primo e ultimo giorno della settimana che contiene la data k.
-     inizioSettimana: 1 = lunedi', 0 = domenica. */
-  function intervalloSettimana(k, inizioSettimana) {
-    var d = daChiave(k);
-    var scarto = (d.getDay() - inizioSettimana + 7) % 7;
-    var inizio = new Date(d.getFullYear(), d.getMonth(), d.getDate() - scarto);
-    var fine = new Date(inizio.getFullYear(), inizio.getMonth(), inizio.getDate() + 6);
-    return { da: chiave(inizio), a: chiave(fine) };
-  }
-
-  /* Tutte le corse previste fra due date (estremi inclusi), in ordine:
-     per giorno, poi accompagnare prima di riprendere, poi per persona. */
-  function corsePerPeriodo(da, a) {
-    var giorni = FL.dati.stato().giorni;
-    var persone = FL.dati.persone();
-    var tipi = FL.dati.tipi();
-    var out = [];
-
-    Object.keys(giorni).sort().forEach(function (k) {
-      if (k < da || k > a) return;
-      statoGiorno(k).corse.forEach(function (c) {
-        out.push({
-          chiave: k, persona: c.persona, tipo: c.tipo,
-          dove: c.dove, fatto: c.fatto, stato: c.stato
-        });
-      });
-    });
-
-    function indice(lista, id) {
-      for (var i = 0; i < lista.length; i++) if (lista[i].id === id) return i;
-      return 0;
-    }
-    out.sort(function (x, y) {
-      if (x.chiave !== y.chiave) return x.chiave < y.chiave ? -1 : 1;
-      var t = indice(tipi, x.tipo.id) - indice(tipi, y.tipo.id);
-      if (t) return t;
-      return indice(persone, x.persona.id) - indice(persone, y.persona.id);
-    });
-    return out;
-  }
-
   /* ------------------------------- API --------------------------------- */
 
   FL.dati = {
@@ -464,6 +422,9 @@
     pianifica: pianifica,
     conferma: conferma,
     pianificaMolti: pianificaMolti,
+    impostaDoveGiorno: impostaDoveGiorno,
+    luoghiUsati: luoghiUsati,
+    DOVE_PREDEFINITO: DOVE_PREDEFINITO,
     svuotaGiorno: svuotaGiorno,
     totaleFatte: totaleFatte,
     corseInSospeso: corseInSospeso,

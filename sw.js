@@ -9,7 +9,7 @@
    tutto di nuovo.
    ========================================================================== */
 
-var VERSIONE = 'fl-v5';
+var VERSIONE = 'fl-v6';
 var CACHE = 'fl-cache-' + VERSIONE;
 
 var FILE = [
@@ -19,6 +19,7 @@ var FILE = [
   './js/storage.js',
   './js/calendario.js',
   './js/notifiche.js',
+  './js/pdf.js',
   './js/ui.js',
   './js/app.js',
   './manifest.json',
@@ -26,8 +27,7 @@ var FILE = [
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
-  './icons/favicon.png',
-  './js/pdf.js'
+  './icons/favicon.png'
 ];
 
 /* Installazione: si mette da parte tutto il necessario.

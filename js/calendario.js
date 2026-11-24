@@ -164,13 +164,14 @@
           tipo: t,
           pianificato: c.pianificato,
           fatto: c.fatto,
+          dove: c.dove,
           stato: st
         };
         if (!st) return;
         pianificate++;
         if (st === 'fatto') fatte++;
         elenco.push({
-          persona: p, tipo: t, fatto: c.fatto, stato: st
+          persona: p, tipo: t, fatto: c.fatto, dove: c.dove, stato: st
         });
       });
 
@@ -265,6 +266,49 @@
     out.scadute = scadute;
     out.mese = mese;
     out.anno = anno;
+    return out;
+  }
+
+  /* ------------------------ Settimana e periodi ------------------------ */
+
+  /* Primo e ultimo giorno della settimana che contiene la data k.
+     inizioSettimana: 1 = lunedi', 0 = domenica. */
+  function intervalloSettimana(k, inizioSettimana) {
+    var d = daChiave(k);
+    var scarto = (d.getDay() - inizioSettimana + 7) % 7;
+    var inizio = new Date(d.getFullYear(), d.getMonth(), d.getDate() - scarto);
+    var fine = new Date(inizio.getFullYear(), inizio.getMonth(), inizio.getDate() + 6);
+    return { da: chiave(inizio), a: chiave(fine) };
+  }
+
+  /* Tutte le corse previste fra due date (estremi inclusi), in ordine:
+     per giorno, poi accompagnare prima di riprendere, poi per persona. */
+  function corsePerPeriodo(da, a) {
+    var giorni = FL.dati.stato().giorni;
+    var persone = FL.dati.persone();
+    var tipi = FL.dati.tipi();
+    var out = [];
+
+    Object.keys(giorni).sort().forEach(function (k) {
+      if (k < da || k > a) return;
+      statoGiorno(k).corse.forEach(function (c) {
+        out.push({
+          chiave: k, persona: c.persona, tipo: c.tipo,
+          dove: c.dove, fatto: c.fatto, stato: c.stato
+        });
+      });
+    });
+
+    function indice(lista, id) {
+      for (var i = 0; i < lista.length; i++) if (lista[i].id === id) return i;
+      return 0;
+    }
+    out.sort(function (x, y) {
+      if (x.chiave !== y.chiave) return x.chiave < y.chiave ? -1 : 1;
+      var t = indice(tipi, x.tipo.id) - indice(tipi, y.tipo.id);
+      if (t) return t;
+      return indice(persone, x.persona.id) - indice(persone, y.persona.id);
+    });
     return out;
   }
 
